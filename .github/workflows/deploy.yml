@@ -1,0 +1,77 @@
+name: OpenOA Deploy Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+
+      service:
+        description: "Service to deploy"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - fastapi
+          - jupyter
+          - all
+
+  push:
+    branches:
+      - main
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify OpenOA import
+        run: |
+          python -c "import openoa"
+          echo "OpenOA import successful"
+
+  deploy-fastapi:
+    needs: test
+    runs-on: ubuntu-latest
+
+    if: |
+      github.event.inputs.service == 'fastapi' ||
+      github.event.inputs.service == 'all' ||
+      github.event_name == 'push'
+
+    steps:
+      - name: Trigger FastAPI Render Deploy
+        run: |
+          curl -X POST "${{ secrets.RENDER_FASTAPI_DEPLOY_HOOK }}"
+
+  deploy-jupyter:
+    needs: test
+    runs-on: ubuntu-latest
+
+    if: |
+      github.event.inputs.service == 'jupyter' ||
+      github.event.inputs.service == 'all' ||
+      github.event_name == 'push'
+
+    steps:
+      - name: Trigger Jupyter Render Deploy
+        run: |
+          curl -X POST "${{ secrets.RENDER_JUPYTER_DEPLOY_HOOK }}"
