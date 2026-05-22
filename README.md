@@ -16,8 +16,7 @@ To make it deployable and usable in a SaaS-like environment, I implemented:
 - A FastAPI service exposing core analysis logic  
 - Docker-based deployment for reproducibility  
 - Cloud deployment using Render  
-
----
+- CI/CD automation using GitHub Actions  
 
 ## 🚀 Live Deployments
 
